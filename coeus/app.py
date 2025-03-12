@@ -1,52 +1,29 @@
-from flask import Flask
-from flask_restful import Api
-from config import Config
-from src.database import db
+from fastapi import FastAPI
+from src.database import engine, Base
+import uvicorn
 
-# Import resource classes from our 'resources' package
-from src.resources.content import NextContentResource, ContentResource
-from src.resources.exam import ExamStartResource, ExamSubmitResource
-from src.resources.review import ReviewResource
-from src.resources.recall import RecallResource, RecallSubmitResource
-from src.resources.unit_exam import UnitExamStartResource, UnitExamSubmitResource
+# Routers
+from src.routers import content, exam, review, recall, unit_exam
 
-def create_app(config_class=Config):
-    """
-    Application factory pattern: create and configure a Flask app instance.
-    """
-    app = Flask(__name__)
-    app.config.from_object(config_class)
+def create_app() -> FastAPI:
+    app = FastAPI(title="Coeus")
 
-    # Initialize database with Flask app
-    db.init_app(app)
+    # Create database tables if they don't exist
+    Base.metadata.create_all(bind=engine)
 
-    # Create a Flask-RESTful API and add resources/endpoints
-    api = Api(app)
+    @app.get("/")
+    async def root():
+        return {"message": "Hello World"}
 
-    # Content endpoints
-    api.add_resource(NextContentResource, "/content/next")           # GET next content (or next step in queue)
-    api.add_resource(ContentResource, "/content/<int:content_id>")   # GET specific content details
-
-    # Exam endpoints
-    api.add_resource(ExamStartResource, "/exam/<int:content_id>")        # GET: start (fetch) exam questions
-    api.add_resource(ExamSubmitResource, "/exam/<int:content_id>/submit") # POST: submit answers to exam
-
-    # Review endpoints
-    api.add_resource(ReviewResource, "/review") # GET/POST for review cycle
-
-    # Recall (spaced repetition) endpoints
-    api.add_resource(RecallResource, "/remember")         # GET: fetch recall questions
-    api.add_resource(RecallSubmitResource, "/remember/submit")  # POST: submit recall answers
-
-    # Unit exam endpoints
-    api.add_resource(UnitExamStartResource, "/unit_exam/<int:level_id>")         # GET: start level exam
-    api.add_resource(UnitExamSubmitResource, "/unit_exam/<int:level_id>/submit") # POST: submit level exam
-
+    # Include Routers
+    app.include_router(content.router, prefix="/content", tags=["Content"])
+    app.include_router(exam.router, prefix="/exam", tags=["Exam"])
+    app.include_router(review.router, prefix="/review", tags=["Review"])
+    app.include_router(recall.router, prefix="/remember", tags=["Recall"])
+    app.include_router(unit_exam.router, prefix="/unit_exam", tags=["Unit Exam"])
+    
     return app
 
+app = create_app()
 if __name__ == "__main__":
-    # Run the app with default config
-    app = create_app()
-    with app.app_context():
-        db.create_all()  # Create tables if they don't exist
-    app.run(debug=True)
+    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
