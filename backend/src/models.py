@@ -5,7 +5,11 @@ from src.database import Base
 class User(Base):
     __tablename__ = "user"
     id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(50), nullable=False)
     name = Column(String(100), nullable=False)
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
 
 class Level(Base):
     __tablename__ = "level"

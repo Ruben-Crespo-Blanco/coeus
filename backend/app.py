@@ -3,7 +3,7 @@ from src.database import engine, Base
 import uvicorn
 
 # Routers
-from src.routers import content, exam, review, recall, unit_exam
+from src.routers import content, exam, review, recall, unit_exam, auth
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Coeus")
@@ -16,6 +16,7 @@ def create_app() -> FastAPI:
         return {"message": "Hello World"}
 
     # Include Routers
+    app.include_router(auth.router, prefix="/auth", tags=["Auth"])
     app.include_router(content.router, prefix="/content", tags=["Content"])
     app.include_router(exam.router, prefix="/exam", tags=["Exam"])
     app.include_router(review.router, prefix="/review", tags=["Review"])

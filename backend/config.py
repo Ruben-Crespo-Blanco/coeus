@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Config:
     """
@@ -6,8 +9,9 @@ class Config:
     Adjust the database URI and SECRET_KEY for production.
     """
     DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///coeus.db")
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    ALGORITHM = "HS256"
 
-
-#from dotenv import load_dotenv
-#load_dotenv()
-#SECRET_KEY = os.getenv('SECRET_KEY')
+#
+#
+#
