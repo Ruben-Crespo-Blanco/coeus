@@ -42,13 +42,17 @@ def get_content(content_id: int = Path(description="ID number of the content to 
     content = db.query(Content).filter(Content.id == content_id).first()
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
-
-    return {
-        "id": content.id,
-        "title": content.title,
-        "body": content.body,
-        "level_id": content.level_id
-    }
+    
+    progress = db.query(UserContentProgress).filter(Content.id == content_id).first()
+    if progress.available:
+        return {
+            "id": content.id,
+            "title": content.title,
+            "body": content.body,
+            "level_id": content.level_id
+        }
+    else: 
+        raise HTTPException(status_code=403, detail="Content not available to you yet")
 
 @router.post("/{content_id}/newcontent")
 def new_content(content_id: int, db: Session = Depends(get_db)):
