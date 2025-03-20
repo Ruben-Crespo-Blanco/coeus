@@ -4,22 +4,22 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.models import (
     Question, Option,
-    UserContentProgress, UserQuestionProgress
+    UserContentProgress, UserQuestionProgress, SubmittedExam
 )
 
 router = APIRouter()
 
 @router.get("/{content_id}")
-def start_exam(content_id: int, db: Session = Depends(get_db)):
+def start_exam(content_id: int, db: Session = Depends(get_db), number_questions: int = 10):
     """
     GET /exam/{content_id}
-    Return 10 random questions for the given content.
+    Return a number of random questions for the given content.
     """
     user_id = 1  # Hardcoded example
 
     questions = db.query(Question).filter(Question.content_id == content_id).all()
     random.shuffle(questions)
-    selected_questions = questions[:10]
+    selected_questions = questions[:number_questions]
 
     response_data = []
     for q in selected_questions:
@@ -38,7 +38,7 @@ def start_exam(content_id: int, db: Session = Depends(get_db)):
     }
 
 @router.post("/{content_id}/submit")
-def submit_exam(content_id: int, answers: dict, db: Session = Depends(get_db)):
+def submit_exam(content_id: int, answers: SubmittedExam, db: Session = Depends(get_db)):
     """
     POST /exam/{content_id}/submit
     Expects JSON: { "answers": [ { "question_id": x, "option_id": y }, ... ] }
@@ -100,9 +100,14 @@ def submit_exam(content_id: int, answers: dict, db: Session = Depends(get_db)):
     pass_30_min = (ucp.answered_count >= 30)
     pass_50_ratio = (overall_correct_ratio >= 0.5)
 
+
+    #Update UserContentProgress.passed and Content.available in db
     if pass_80_percent and pass_30_min and pass_50_ratio:
         ucp.passed = True
-
+        next_ucp = db.query(UserContentProgress).filter_by(
+        user_id=user_id, content_id=content_id+1
+        ).first()
+        next_ucp.available = True
     db.commit()
 
     return {

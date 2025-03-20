@@ -10,7 +10,7 @@ class Config:
     """
     DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///coeus.db")
     SECRET_KEY = os.getenv('SECRET_KEY')
-    ALGORITHM = "HS256"
+    ALGORITHM = os.getenv('ALGORITHM')
 
 #
 #

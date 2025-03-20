@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
 from src.database import get_db
 from src.models import (
     Content, UserContentProgress, UserQuestionProgress
 )
+from recall import get_recall_questions
+from review import get_review_questions
 
 router = APIRouter()
 
@@ -12,23 +14,27 @@ def get_next_content(db: Session = Depends(get_db)):
     """
     GET /content/next
     - Illustrates the logic for the work queue: 
-      recall -> review -> test -> new content.
+      recall -> review -> new content.
     - Currently a placeholder with minimal logic.
     """
     user_id = 1  # Hardcoded example
 
-    # TODO: 
-    #   1) Check if user has questions due for recall 
-    #   2) Check if user has pending reviews 
-    #   3) If user has unpassed content, direct them to exam 
-    #   4) Otherwise, serve new content
+    #   1) Check if user has questions due for recall
+    recall_questions = get_recall_questions()
+    if len(recall_questions["due_recall_questions"]) > 0:
+        return recall_questions
 
-    return {
-        "message": "Next content logic goes here (recall, review, test, or new)."
-    }
+    #   2) Check if user has pending reviews 
+    review_questions = get_review_questions()
+    if len(review_questions["failed_questions"]):
+        return review_questions
+    #   3) Otherwise, serve new content
+    last_content = None #placeholder
+    return get_content(last_content)
+
 
 @router.get("/{content_id}")
-def get_content(content_id: int, db: Session = Depends(get_db)):
+def get_content(content_id: int = Path(description="ID number of the content to GET from database"), db: Session = Depends(get_db)):
     """
     GET /content/{content_id}
     Return the details of a specific lesson/content unit.
@@ -43,3 +49,7 @@ def get_content(content_id: int, db: Session = Depends(get_db)):
         "body": content.body,
         "level_id": content.level_id
     }
+
+@router.post("/{content_id}/newcontent")
+def new_content(content_id: int, db: Session = Depends(get_db)):
+    pass
