@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from src.database import Base
-from pydantic import BaseModel
 
 class User(Base):
     __tablename__ = "user"
@@ -66,6 +65,3 @@ class UserQuestionProgress(Base):
     next_review_date = Column(DateTime, default=None)
     times_correct = Column(Integer, default=0)
     times_incorrect = Column(Integer, default=0)
-
-class SubmittedExam(BaseModel):
-    answers: list

@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.models import (
     Question, Option,
-    UserContentProgress, UserQuestionProgress, SubmittedExam
+    UserContentProgress, UserQuestionProgress
 )
+from schema import SubmittedExam
 
 router = APIRouter()
 
