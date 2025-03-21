@@ -24,10 +24,9 @@ class Content(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(100), nullable=False)
     body = Column(Text, nullable=True)
-    level_id = Column(Integer, ForeignKey("level.id"), nullable=True)
-    order_index = Column(Integer, nullable=True)
+    course_id = Column(Integer, ForeignKey("level.id"), nullable=False) #not yet implemented
+    order_index = Column(Integer, nullable=False)
 
-    level = relationship("Level", back_populates="contents")
     questions = relationship("Question", back_populates="content")
 
 class Question(Base):

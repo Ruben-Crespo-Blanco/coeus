@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
+from sqlalchemy import func
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError, OperationalError
 from src.database import get_db
 from src.models import (
     Content, UserContentProgress, UserQuestionProgress
 )
+from schema import NewContent
 from recall import get_recall_questions
 from review import get_review_questions
 
@@ -55,5 +58,40 @@ def get_content(content_id: int = Path(description="ID number of the content to 
         raise HTTPException(status_code=403, detail="Content not available to you yet")
 
 @router.post("/{content_id}/newcontent")
-def new_content(content_id: int, db: Session = Depends(get_db)):
-    pass
+def new_content(new_content: NewContent, db: Session = Depends(get_db)):
+    
+
+    try:
+        # Find the max order_index for this course (or level)
+        max_index = db.query(func.max(Content.order_index)).filter(Content.level_id == new_content.course_id).scalar()
+
+        next_order_index = (max_index or 0) + 1  # Start at 1 if none exists
+
+        # Create a new Content object
+        db_content = Content(
+            title=new_content.title,
+            body=new_content.body,
+            course_id=new_content.course_id,
+            order_index=next_order_index,
+        )
+
+        db.add(db_content)
+        db.commit()
+        db.refresh(db_content)
+
+        return {
+            "id": db_content.id,
+            "title": db_content.title,
+            "message": "New content created successfully"
+        }
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Integrity error: possible duplicate or constraint violation")
+
+    except OperationalError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database operation failed")
+
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Unexpected database error")
